@@ -7,19 +7,41 @@ output:
 
 
 ## Loading and preprocessing the data
-
-
+```{r, echo = TRUE, results= 'hide'}
+library(dplyr)
+library(ggplot2)
+activity <- read.csv("activity.csv")
+```
+In this step I am loading the dplyr package to help me later on as well as reading the activty datset into a dataframe.
 
 ## What is mean total number of steps taken per day?
+```{r, echo = TRUE}
+Stepsgroup <- group_by(activity, date)
+totalSteps <- summarise(Stepsgroup, TotalSteps = sum(steps, na.rm = TRUE))
+hist(totalSteps$TotalSteps)
 
+meanSteps <- mean(totalSteps$TotalSteps)
+medianSteps <- median(totalSteps$TotalSteps)
+#Mean
+print(meanSteps)
+#Median
+print(medianSteps)
+```
 
 
 ## What is the average daily activity pattern?
+```{r, echo = TRUE}
+IntervalGroup <- group_by(activity, interval)
+intSteps <- summarise(IntervalGroup, avgInt = mean(steps, na.rm = TRUE))
 
+plot(intSteps$interval, intSteps$avgInt, type= "l")
+```
 
 
 ## Imputing missing values
+```{r}
 
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
