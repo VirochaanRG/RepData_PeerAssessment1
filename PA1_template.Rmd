@@ -11,6 +11,7 @@ output:
 library(dplyr)
 library(ggplot2)
 activity <- read.csv("activity.csv")
+options(warn = -1)
 ```
 In this step I am loading the dplyr package to help me later on as well as reading the activty datset into a dataframe.
 
@@ -40,8 +41,72 @@ plot(intSteps$interval, intSteps$avgInt, type= "l")
 
 ## Imputing missing values
 ```{r}
+numNa <- is.na(activity)
+trueTotal <- sum(numNa == TRUE)
+#Number of Missing Values
+print(trueTotal)
 
+#Filling in NAs
+activityFill <- activity
+for(i in 1:length(activityFill$steps)){
+    if(is.na(activityFill$steps[i]) == TRUE){
+        interval <- activityFill$interval[i]
+        rowNum <- grep(as.character(interval), intSteps$interval)
+        val <- intSteps$avgInt[as.numeric(rowNum)]
+        activityFill$steps[i] <- val
+    }
+}
+
+#Total Steps taken per day
+Stepsgroup1 <- group_by(activityFill, date)
+totalSteps1 <- summarise(Stepsgroup1, TotalSteps = sum(steps, na.rm = TRUE))
+hist(totalSteps1$TotalSteps)
+
+meanSteps1 <- mean(totalSteps1$TotalSteps)
+medianSteps1 <- median(totalSteps1$TotalSteps)
+#Mean
+print(meanSteps1)
+#Median
+print(medianSteps1)
 ```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+weekday <- weekdays(as.Date(activityFill$date))
+activityFill <- cbind(activityFill, weekday)
+
+for(i in 1:length(activityFill$weekday)){
+    if(activityFill$weekday[i] == "Saturday" | activityFill$weekday[i] == "Sunday"){
+        activityFill$weekday[i] = "Weekend"
+    }
+    else{
+        activityFill$weekday[i] = "Weekday"
+    }
+}
+
+activitySplit <- split(activityFill, activityFill$weekday)
+
+actDay <- as.data.frame(activitySplit[1])
+actEnd <- as.data.frame(activitySplit[2])
+
+actDayInt <- group_by(actDay, Weekday.interval)
+intDay <- summarise(actDayInt, avgInt = mean(Weekday.steps))
+day <- rep("Weekday", length(intDay$avgInt))
+intDay <- cbind(intDay, day)
+
+actEndInt <- group_by(actEnd, Weekend.interval)
+intEnd <- summarise(actEndInt, avgInt = mean(Weekend.steps))
+End <- rep("Weekend", length(intEnd$avgInt))
+intEnd <- cbind(intEnd, End)
+
+names(intEnd)[1] <- c("Interval")
+names(intEnd)[3] <- c("Day")
+
+names(intEnd)[1] <- names(intDay)[1]
+names(intEnd)[3]<- names(intDay)[3]
+
+finalInt <- rbind(intDay, intEnd)
+
+qplot(finalInt$Weekday.interval, as.numeric(finalInt$avgInt), facets = ~finalInt$day, geom = "line") 
+```
